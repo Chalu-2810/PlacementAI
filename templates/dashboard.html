@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0 fw-bold">Welcome, <span class="text-primary">{{ user.full_name }}</span> 👋</h4>
+      <small class="text-muted">
+        <i class="fas fa-building me-1"></i>{{ user.department }} &nbsp;|&nbsp;
+        <i class="fas fa-id-card me-1"></i>{{ user.register_no }} &nbsp;|&nbsp;
+        <i class="fas fa-calendar me-1"></i>Batch {{ user.batch_year }}
+      </small>
+    </div>
+    <a href="{{ url_for('academic') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i>Update Details
+    </a>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="card mb-4 border-0 bg-light rounded-4">
+    <div class="card-body py-3">
+      <h6 class="text-muted mb-3 fw-semibold"><i class="fas fa-tasks me-2"></i>Your Progress</h6>
+      <div class="d-flex justify-content-around text-center flex-wrap gap-3">
+        <div class="step-item">
+          <div class="step-icon fs-3 {% if academic %}text-success{% else %}text-secondary{% endif %}">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <small class="d-block mt-1 fw-semibold">Academic Details</small>
+          {% if academic %}<span class="badge bg-success">✓ Done</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+        </div>
+        <div class="text-muted fs-4 align-self-center d-none d-md-block">→</div>
+        <div class="step-item">
+          <div class="step-icon fs-3 {% if quiz %}text-success{% else %}text-secondary{% endif %}">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <small class="d-block mt-1 fw-semibold">Skill Assessment</small>
+          {% if quiz %}<span class="badge bg-success">✓ Done</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+        </div>
+        <div class="text-muted fs-4 align-self-center d-none d-md-block">→</div>
+        <div class="step-item">
+          <div class="step-icon fs-3 {% if session.get('resume_score') %}text-success{% else %}text-secondary{% endif %}">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <small class="d-block mt-1 fw-semibold">Resume Upload</small>
+          {% if session.get('resume_score') %}<span class="badge bg-success">✓ Done</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+        </div>
+        <div class="text-muted fs-4 align-self-center d-none d-md-block">→</div>
+        <div class="step-item">
+          <div class="step-icon fs-3 {% if prediction %}text-success{% else %}text-secondary{% endif %}">
+            <i class="fas fa-robot"></i>
+          </div>
+          <small class="d-block mt-1 fw-semibold">ML Prediction</small>
+          {% if prediction %}<span class="badge bg-success">✓ Done</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+
+    <!-- Academic Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-muted mb-0">Academic Performance</h6>
+            <i class="fas fa-graduation-cap text-primary fs-4"></i>
+          </div>
+          {% if academic %}
+          <div class="mt-2">
+            <div class="d-flex justify-content-between small"><span>10th %</span><strong>{{ academic.tenth_percentage }}%</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-info" style="width:{{ academic.tenth_percentage }}%"></div></div>
+            <div class="d-flex justify-content-between small"><span>12th %</span><strong>{{ academic.twelfth_percentage }}%</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-info" style="width:{{ academic.twelfth_percentage }}%"></div></div>
+            <div class="d-flex justify-content-between small"><span>CGPA</span><strong>{{ academic.cgpa }} / 10</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-success" style="width:{{ (academic.cgpa / 10 * 100)|round }}%"></div></div>
+            <p class="mb-0 mt-2 small"><i class="fas fa-layer-group me-1 text-primary"></i>Domain: <strong>{{ academic.domain }}</strong></p>
+            <p class="mb-0 small text-{% if academic.backlogs == 0 %}success{% else %}warning{% endif %}">
+              <i class="fas fa-exclamation-circle me-1"></i>Backlogs: {{ academic.backlogs }}
+            </p>
+          </div>
+          {% else %}
+          <p class="text-muted small mt-2">No academic details yet.</p>
+          <a href="{{ url_for('academic') }}" class="btn btn-sm btn-primary mt-1">Add Now →</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-muted mb-0">Skill Assessment</h6>
+            <i class="fas fa-chart-bar text-warning fs-4"></i>
+          </div>
+          {% if quiz %}
+          <div class="mt-2">
+            <div class="d-flex justify-content-between small"><span>Aptitude</span><strong>{{ quiz.aptitude_score }}%</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-warning" style="width:{{ quiz.aptitude_score }}%"></div></div>
+            <div class="d-flex justify-content-between small"><span>Technical</span><strong>{{ quiz.technical_score }}%</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-warning" style="width:{{ quiz.technical_score }}%"></div></div>
+            <div class="d-flex justify-content-between small"><span>Communication</span><strong>{{ quiz.communication_score }}%</strong></div>
+            <div class="progress my-1" style="height:5px"><div class="progress-bar bg-warning" style="width:{{ quiz.communication_score }}%"></div></div>
+            <div class="d-flex justify-content-between mt-2 small fw-bold">
+              <span>Overall Avg</span><span class="text-warning">{{ quiz.total_score | round(1) }}%</span>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-muted small mt-2">No quiz scores yet.</p>
+          <a href="{{ url_for('quiz_setup') }}" class="btn btn-sm btn-warning mt-1">Take Assessment →</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Prediction Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body text-center">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-muted mb-0">ML Prediction</h6>
+            <i class="fas fa-brain text-success fs-4"></i>
+          </div>
+          {% if prediction %}
+          <div class="mt-2">
+            {% if prediction.prediction == 'Placed' %}
+              <div class="display-5 mb-1">🎓</div>
+              <h5 class="text-success fw-bold">PLACED</h5>
+            {% else %}
+              <div class="display-5 mb-1">📊</div>
+              <h5 class="text-danger fw-bold">NOT PLACED</h5>
+            {% endif %}
+            <p class="mb-1 small">Confidence: <strong>{{ (prediction.confidence_score * 100)|round(1) }}%</strong></p>
+            <p class="mb-1 small">Readiness: <strong>{{ prediction.readiness_score }}/100</strong></p>
+            <span class="badge bg-primary px-3">{{ prediction.readiness_level }}</span>
+            <div class="mt-3">
+              <a href="{{ url_for('predict') }}" class="btn btn-sm btn-outline-primary">Re-run Prediction</a>
+            </div>
+          </div>
+          {% else %}
+          <div class="mt-3">
+            <p class="text-muted small">Complete all steps to get prediction.</p>
+            <a href="{{ url_for('predict') }}" class="btn btn-sm btn-success">
+              <i class="fas fa-robot me-1"></i>Run Prediction
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <h6 class="text-muted fw-semibold mb-3"><i class="fas fa-bolt me-1 text-warning"></i>Quick Actions</h6>
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('academic') }}" class="btn btn-outline-primary w-100 py-3 rounded-3 d-flex flex-column align-items-center">
+        <i class="fas fa-edit fs-4 mb-1"></i><small>Academic Details</small>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('quiz_setup') }}" class="btn btn-outline-warning w-100 py-3 rounded-3 d-flex flex-column align-items-center">
+        <i class="fas fa-question-circle fs-4 mb-1"></i><small>Skill Assessment</small>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('resume') }}" class="btn btn-outline-info w-100 py-3 rounded-3 d-flex flex-column align-items-center">
+        <i class="fas fa-file-upload fs-4 mb-1"></i><small>Upload Resume</small>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('predict') }}" class="btn btn-outline-success w-100 py-3 rounded-3 d-flex flex-column align-items-center">
+        <i class="fas fa-robot fs-4 mb-1"></i><small>Get Prediction</small>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

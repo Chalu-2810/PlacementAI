@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Resume Upload — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+
+    <!-- Upload Card -->
+    <div class="card shadow border-0 rounded-4 mb-4">
+      <div class="card-header bg-info text-white rounded-top-4 py-3">
+        <h5 class="mb-0"><i class="fas fa-file-upload me-2"></i>Resume Upload & ATS Scoring</h5>
+        <small class="opacity-75">Upload your resume PDF to get an ATS compatibility score</small>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data">
+          <div class="upload-area border-2 border-dashed rounded-4 p-5 text-center mb-3" id="dropZone">
+            <i class="fas fa-file-pdf fs-1 text-danger mb-3 d-block"></i>
+            <h6 class="fw-semibold">Drag & drop your PDF here</h6>
+            <p class="text-muted small mb-3">or click to browse</p>
+            <input type="file" name="resume_pdf" id="resumeFile" accept=".pdf" class="d-none" required/>
+            <label for="resumeFile" class="btn btn-outline-danger px-4">
+              <i class="fas fa-folder-open me-2"></i>Choose PDF File
+            </label>
+            <p class="text-muted small mt-2 mb-0" id="fileName">No file chosen</p>
+          </div>
+          <button type="submit" class="btn btn-info text-white w-100 py-2 fw-bold">
+            <i class="fas fa-upload me-2"></i>Analyze Resume
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ATS Results -->
+    {% if ats_result %}
+    <div class="card shadow border-0 rounded-4 mb-4">
+      <div class="card-header bg-success text-white rounded-top-4 py-3 d-flex justify-content-between">
+        <div>
+          <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>ATS Score Results</h5>
+        </div>
+        <span class="badge bg-white text-success fs-5 px-3">{{ resume_score }}/100</span>
+      </div>
+      <div class="card-body p-4">
+
+        <!-- Score Gauge -->
+        <div class="text-center mb-4">
+          <div class="position-relative d-inline-block">
+            <canvas id="gaugeChart" width="200" height="200"></canvas>
+            <div class="position-absolute top-50 start-50 translate-middle text-center" style="margin-top:20px">
+              <div class="fs-2 fw-bold {% if resume_score >= 75 %}text-success{% elif resume_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                {{ resume_score }}
+              </div>
+              <small class="text-muted">ATS Score</small>
+            </div>
+          </div>
+          <div class="mt-2">
+            {% if resume_score >= 75 %}
+              <span class="badge bg-success px-3 py-2 fs-6">Excellent Resume ✓</span>
+            {% elif resume_score >= 50 %}
+              <span class="badge bg-warning text-dark px-3 py-2 fs-6">Good — Needs Minor Improvements</span>
+            {% else %}
+              <span class="badge bg-danger px-3 py-2 fs-6">Needs Significant Improvements</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Breakdown -->
+        <h6 class="fw-semibold mb-3">Score Breakdown</h6>
+        {% for category, score in ats_result.breakdown.items() %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>{{ category }}</span><strong>{{ score }}</strong>
+          </div>
+          <div class="progress" style="height:8px">
+            <div class="progress-bar
+              {% if category == 'Technical Skills' %}bg-primary
+              {% elif category == 'Key Sections' %}bg-info
+              {% elif category == 'Action Verbs' %}bg-warning
+              {% elif category == 'Contact Info' %}bg-success
+              {% else %}bg-secondary{% endif %}"
+              style="width:{{ (score / 30 * 100)|round }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Suggestions -->
+        <h6 class="fw-semibold mt-4 mb-2">Improvement Suggestions</h6>
+        <ul class="list-group list-group-flush">
+          {% for tip in ats_result.suggestions %}
+          <li class="list-group-item border-0 ps-0 small">
+            <i class="fas fa-lightbulb text-warning me-2"></i>{{ tip }}
+          </li>
+          {% endfor %}
+        </ul>
+
+        <!-- Skills Found -->
+        {% if ats_result.skills_found %}
+        <h6 class="fw-semibold mt-4 mb-2">Skills Detected in Resume</h6>
+        <div class="d-flex flex-wrap gap-2">
+          {% for skill in ats_result.skills_found[:20] %}
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">{{ skill }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mt-4 d-grid">
+          <a href="{{ url_for('predict') }}" class="btn btn-success py-2 fw-bold">
+            <i class="fas fa-robot me-2"></i>Run ML Prediction Now →
+          </a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <!-- Tips if no upload yet -->
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h6 class="fw-semibold mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Resume Tips for ATS</h6>
+        <ul class="list-unstyled small text-muted">
+          <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Include all key sections: Education, Experience, Projects, Skills</li>
+          <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Use strong action verbs: Developed, Built, Led, Optimized</li>
+          <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Keep resume 1 page for freshers (200–800 words)</li>
+          <li class="mb-2"><i class="fas fa-check text-success me-2"></i>List technical skills explicitly (Python, SQL, React, etc.)</li>
+          <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Add your email and phone number</li>
+          <li><i class="fas fa-check text-success me-2"></i>Mention certifications and quantified achievements</li>
+        </ul>
+        <div class="alert alert-info border-0 rounded-3 small mt-3 mb-0">
+          <i class="fas fa-info-circle me-2"></i>
+          Resume upload is <strong>optional</strong> but improves your prediction accuracy.
+          <a href="{{ url_for('predict') }}" class="ms-1">Skip and predict →</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Show filename on select
+  document.getElementById('resumeFile').addEventListener('change', function() {
+    document.getElementById('fileName').textContent = this.files[0]?.name || 'No file chosen';
+  });
+
+  {% if ats_result %}
+  // Doughnut gauge chart
+  const ctx = document.getElementById('gaugeChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [{{ resume_score }}, {{ 100 - resume_score }}],
+        backgroundColor: [
+          '{% if resume_score >= 75 %}#198754{% elif resume_score >= 50 %}#ffc107{% else %}#dc3545{% endif %}',
+          '#e9ecef'
+        ],
+        borderWidth: 0,
+        circumference: 270,
+        rotation: 225,
+      }]
+    },
+    options: {
+      cutout: '75%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+  {% endif %}
+</script>
+{% endblock %}

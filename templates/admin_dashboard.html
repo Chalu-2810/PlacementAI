@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="fas fa-user-shield text-dark me-2"></i>Admin Dashboard</h4>
+      <small class="text-muted">Student placement summary and analytics</small>
+    </div>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger btn-sm">
+      <i class="fas fa-sign-out-alt me-1"></i>Logout
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 bg-primary text-white rounded-4 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="fs-2 fw-bold">{{ students | length }}</div>
+              <small>Total Students</small>
+            </div>
+            <i class="fas fa-users fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% for stat in stats %}
+    <div class="col-md-3">
+      <div class="card border-0 rounded-4 shadow-sm
+        {% if stat.prediction == 'Placed' %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="fs-2 fw-bold">{{ stat.count }}</div>
+              <small>{{ stat.prediction }}</small>
+              <div class="small opacity-75">Avg Readiness: {{ stat.avg_readiness | round(1) if stat.avg_readiness else 'N/A' }}%</div>
+            </div>
+            <i class="fas {% if stat.prediction == 'Placed' %}fa-check-circle{% else %}fa-times-circle{% endif %} fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pie Chart -->
+  {% if stats %}
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white fw-semibold border-0">Placement Distribution</div>
+        <div class="card-body d-flex justify-content-center">
+          <canvas id="pieChart" width="220" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-header bg-white fw-semibold border-0">Average Score Comparison</div>
+        <div class="card-body">
+          <canvas id="avgBar" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Students Table -->
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+      <span class="fw-semibold"><i class="fas fa-table me-2"></i>All Students</span>
+      <input type="text" id="searchInput" class="form-control form-control-sm w-auto" placeholder="Search…"/>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle" id="studentsTable">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th><th>Name</th><th>Reg. No.</th><th>Dept.</th>
+              <th>CGPA</th><th>Domain</th>
+              <th>Aptitude</th><th>Technical</th><th>Comm.</th>
+              <th>Prediction</th><th>Confidence</th><th>Readiness</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr>
+              <td class="text-muted small">{{ loop.index }}</td>
+              <td class="fw-semibold small">{{ s.full_name }}</td>
+              <td class="small">{{ s.register_no }}</td>
+              <td class="small">{{ s.department }}</td>
+              <td class="small">{{ s.cgpa or '—' }}</td>
+              <td class="small">{{ s.domain or '—' }}</td>
+              <td class="small">{{ s.aptitude_score or '—' }}</td>
+              <td class="small">{{ s.technical_score or '—' }}</td>
+              <td class="small">{{ s.communication_score or '—' }}</td>
+              <td>
+                {% if s.prediction %}
+                <span class="badge {% if s.prediction == 'Placed' %}bg-success{% else %}bg-danger{% endif %}">
+                  {{ s.prediction }}
+                </span>
+                {% else %}<span class="text-muted small">—</span>{% endif %}
+              </td>
+              <td class="small">{{ ((s.confidence_score or 0) * 100) | round(1) }}%</td>
+              <td class="small">{{ s.readiness_score or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Search filter
+  document.getElementById('searchInput').addEventListener('keyup', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  {% if stats %}
+  const stats = {{ stats | tojson }};
+  // Pie chart
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: stats.map(s => s.prediction),
+      datasets: [{
+        data: stats.map(s => s.count),
+        backgroundColor: stats.map(s => s.prediction === 'Placed' ? '#198754' : '#dc3545'),
+        borderWidth: 2
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Avg bar
+  new Chart(document.getElementById('avgBar'), {
+    type: 'bar',
+    data: {
+      labels: stats.map(s => s.prediction),
+      datasets: [{
+        label: 'Avg Confidence (%)',
+        data: stats.map(s => ((s.avg_confidence || 0) * 100).toFixed(1)),
+        backgroundColor: '#0d6efd'
+      }, {
+        label: 'Avg Readiness',
+        data: stats.map(s => (s.avg_readiness || 0).toFixed(1)),
+        backgroundColor: '#198754'
+      }]
+    },
+    options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { position: 'bottom' } } }
+  });
+  {% endif %}
+</script>
+{% endblock %}

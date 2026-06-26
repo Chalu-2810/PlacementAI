@@ -1,0 +1,37 @@
+{
+    "Logistic Regression": {
+        "accuracy": 92.92,
+        "precision": 93.58,
+        "recall": 97.22,
+        "f1_score": 95.37,
+        "cv_accuracy": 92.29
+    },
+    "Decision Tree": {
+        "accuracy": 87.92,
+        "precision": 93.64,
+        "recall": 90.0,
+        "f1_score": 91.78,
+        "cv_accuracy": 86.04
+    },
+    "Random Forest": {
+        "accuracy": 91.67,
+        "precision": 92.55,
+        "recall": 96.67,
+        "f1_score": 94.57,
+        "cv_accuracy": 89.69
+    },
+    "Gradient Boosting": {
+        "accuracy": 92.92,
+        "precision": 94.05,
+        "recall": 96.67,
+        "f1_score": 95.34,
+        "cv_accuracy": 89.38
+    },
+    "SVM": {
+        "accuracy": 92.08,
+        "precision": 93.51,
+        "recall": 96.11,
+        "f1_score": 94.79,
+        "cv_accuracy": 90.52
+    }
+}

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Skill Assessment Quiz — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:800px;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-check text-warning me-2"></i>Skill Assessment</h4>
+      <small class="text-muted">30 Questions · Aptitude + Technical + Communication</small>
+    </div>
+    <div id="timerBadge" class="badge bg-warning text-dark fs-6 px-3 py-2">
+      <i class="fas fa-clock me-1"></i><span id="timerDisplay">30:00</span>
+    </div>
+  </div>
+
+  <!-- Section tabs -->
+  <ul class="nav nav-pills mb-4" id="quizTabs">
+    <li class="nav-item">
+      <a class="nav-link active" href="#sec-aptitude" onclick="showSection('aptitude', this)">
+        <i class="fas fa-brain me-1"></i>Aptitude <span class="badge bg-white text-dark ms-1">10</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#sec-technical" onclick="showSection('technical', this)">
+        <i class="fas fa-code me-1"></i>Technical <span class="badge bg-white text-dark ms-1">10</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#sec-communication" onclick="showSection('communication', this)">
+        <i class="fas fa-comments me-1"></i>Communication <span class="badge bg-white text-dark ms-1">10</span>
+      </a>
+    </li>
+  </ul>
+
+  <form method="POST" action="{{ url_for('submit_quiz') }}" id="quizForm">
+
+    <!-- APTITUDE -->
+    <div id="sec-aptitude" class="quiz-section">
+      {% for q in quiz.aptitude %}
+      <div class="card mb-3 border-0 shadow-sm rounded-3">
+        <div class="card-body">
+          <p class="fw-semibold mb-3"><span class="badge bg-primary me-2">A{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2 border rounded-3 cursor-pointer">
+                <input type="radio"
+       name="aptitude_{{ q.id }}"
+       value="{{ opt }}"
+       class="form-check-input"
+       required>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="text-end">
+        <button type="button" class="btn btn-primary" onclick="showSection('technical', document.querySelectorAll('#quizTabs .nav-link')[1])">Next: Technical →</button>
+      </div>
+    </div>
+
+    <!-- TECHNICAL -->
+    <div id="sec-technical" class="quiz-section d-none">
+      {% for q in quiz.technical %}
+      <div class="card mb-3 border-0 shadow-sm rounded-3">
+        <div class="card-body">
+          <p class="fw-semibold mb-3"><span class="badge bg-success me-2">T{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2 border rounded-3 cursor-pointer">
+                <input type="radio" name="technical_{{ q.id }}" value="{{ opt }}" class="form-check-input mt-0" required/>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" onclick="showSection('aptitude', document.querySelectorAll('#quizTabs .nav-link')[0])">← Back</button>
+        <button type="button" class="btn btn-primary" onclick="showSection('communication', document.querySelectorAll('#quizTabs .nav-link')[2])">Next: Communication →</button>
+      </div>
+    </div>
+
+    <!-- COMMUNICATION -->
+    <div id="sec-communication" class="quiz-section d-none">
+      {% for q in quiz.communication %}
+      <div class="card mb-3 border-0 shadow-sm rounded-3">
+        <div class="card-body">
+          <p class="fw-semibold mb-3"><span class="badge bg-info me-2">C{{ loop.index }}</span>{{ q.question }}</p>
+          <div class="row g-2">
+            {% for opt in q.options %}
+            <div class="col-md-6">
+              <label class="option-label d-flex align-items-center gap-2 p-2 border rounded-3 cursor-pointer">
+                <input type="radio"
+       name="communication_{{ q.id }}"
+       value="{{ opt }}"
+       class="form-check-input"
+       required>
+                <span class="small">{{ opt }}</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between mt-3">
+        <button type="button" class="btn btn-outline-secondary" onclick="showSection('technical', document.querySelectorAll('#quizTabs .nav-link')[1])">← Back</button>
+        <button type="submit" class="btn btn-success btn-lg fw-bold px-5">
+          <i class="fas fa-paper-plane me-2"></i>Submit Quiz
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Section switching
+  function showSection(name, link) {
+    document.querySelectorAll('.quiz-section').forEach(s => s.classList.add('d-none'));
+    document.getElementById('sec-' + name).classList.remove('d-none');
+    document.querySelectorAll('#quizTabs .nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    return false;
+  }
+
+  // Option highlight on select (FIXED)
+document.addEventListener('change', e => {
+  if (e.target.type === 'radio') {
+
+    // limit to current question container
+    const questionBox = e.target.closest('.card');
+
+    const siblings = questionBox.querySelectorAll(
+      `input[name="${e.target.name}"]`
+    );
+
+    siblings.forEach(r => {
+      const lbl = r.closest('label');
+      if (lbl) lbl.classList.remove('selected');
+    });
+
+    const selectedLabel = e.target.closest('label');
+    if (selectedLabel) selectedLabel.classList.add('selected');
+  }
+});
+
+  // Countdown timer — 30 minutes
+  let seconds = 30 * 60;
+  const display = document.getElementById('timerDisplay');
+  const badge   = document.getElementById('timerBadge');
+  const interval = setInterval(() => {
+    seconds--;
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    display.textContent = `${m}:${s}`;
+    if (seconds <= 300) badge.classList.replace('bg-warning', 'bg-danger');
+    if (seconds <= 0) {
+      clearInterval(interval);
+      document.getElementById('quizForm').submit();
+    }
+  }, 1000);
+</script>
+{% endblock %}

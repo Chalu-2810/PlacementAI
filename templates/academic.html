@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Academic Details — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card shadow border-0 rounded-4">
+      <div class="card-header bg-primary text-white rounded-top-4 py-3">
+        <h5 class="mb-0"><i class="fas fa-book-open me-2"></i>Academic Details</h5>
+        <small class="opacity-75">Fill in your marks and preferred domain</small>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('academic') }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">10th Percentage (%)</label>
+              <input type="number" name="tenth" class="form-control" placeholder="e.g. 85.5"
+                     step="0.01" min="0" max="100"
+                     value="{{ academic_details.tenth_percentage if academic_details else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">12th Percentage (%)</label>
+              <input type="number" name="twelfth" class="form-control" placeholder="e.g. 80.0"
+                     step="0.01" min="0" max="100"
+                     value="{{ academic_details.twelfth_percentage if academic_details else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">CGPA (out of 10)</label>
+              <input type="number" name="cgpa" class="form-control" placeholder="e.g. 7.8"
+                     step="0.01" min="0" max="10"
+                     value="{{ academic_details.cgpa if academic_details else '' }}" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Number of Active Backlogs</label>
+              <input type="number" name="backlogs" class="form-control" placeholder="0"
+                     min="0" max="20"
+                     value="{{ academic_details.backlogs if academic_details else '0' }}" required/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Preferred Job Domain</label>
+              <select name="domain" id="domainSelect" class="form-select form-select-lg mb-3" required>
+                <option value="">-- Select your domain --</option>
+                {% for d in domains %}
+                <option value="{{ d.id }}"
+                  {% if academic_details and academic_details.preferred_domain_id == d.id %}selected{% endif %}>
+                  {{ d.domain_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-4 d-grid gap-2">
+            <button type="submit" class="btn btn-primary py-2 fw-bold">
+              <i class="fas fa-save me-2"></i>Save & Continue to Quiz
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

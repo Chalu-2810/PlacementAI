@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% block title %}Prediction Result — PlacementAI{% endblock %}
+
+{% block content %}
+<div class="container" id="result-page">
+
+  <!-- ===== HERO CARD ===== -->
+  <div class="card border-0 shadow rounded-4 mb-4
+    {% if result.prediction == 'Placed' %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+    <div class="card-body text-center py-5">
+      {% if result.prediction == 'Placed' %}
+        <div style="font-size:5rem">🎓</div>
+        <h2 class="fw-bold mt-2">Placement Predicted: <u>PLACED!</u></h2>
+        <p class="fs-5 opacity-90">Congratulations, {{ user.full_name }}! You have strong placement potential.</p>
+      {% else %}
+        <div style="font-size:5rem">📊</div>
+        <h2 class="fw-bold mt-2">Placement Predicted: NOT PLACED</h2>
+        <p class="fs-5 opacity-90">Don't give up, {{ user.full_name }}! Follow the roadmap below to improve.</p>
+      {% endif %}
+
+      <div class="row justify-content-center mt-4 g-3">
+        <div class="col-6 col-md-3">
+          <div class="card bg-white bg-opacity-20 border-0 rounded-3">
+            <div class="card-body py-3">
+              <div class="fs-2 fw-bold">{{ result.confidence }}%</div>
+              <small class="opacity-75">Model Confidence</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card bg-white bg-opacity-20 border-0 rounded-3">
+            <div class="card-body py-3">
+              <div class="fs-2 fw-bold">{{ result.readiness_score }}</div>
+              <small class="opacity-75">Readiness / 100</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card bg-white bg-opacity-20 border-0 rounded-3">
+            <div class="card-body py-3">
+              <div class="fs-5 fw-bold">{{ result.readiness_level }}</div>
+              <small class="opacity-75">Readiness Level</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card bg-white bg-opacity-20 border-0 rounded-3">
+            <div class="card-body py-3">
+              <div class="fs-5 fw-bold">{{ academic.domain }}</div>
+              <small class="opacity-75">Preferred Domain</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- ===== ALL MODELS ===== -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100 rounded-4">
+        <div class="card-header bg-dark text-white rounded-top-4">
+          <i class="fas fa-robot me-2"></i>All Model Predictions
+        </div>
+        <div class="card-body">
+          {% if result.all_model_preds %}
+          <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Model</th><th>Prediction</th><th>Confidence</th></tr>
+            </thead>
+            <tbody>
+              {% for mname, mdata in result.all_model_preds.items() %}
+              <tr>
+                <td class="fw-semibold small">{{ mname }}</td>
+                <td>
+                  <span class="badge {% if mdata.prediction == 'Placed' %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ mdata.prediction }}
+                  </span>
+                </td>
+                <td>
+                  <div class="progress mb-1" style="height:8px">
+                    <div class="progress-bar {% if mdata.prediction == 'Placed' %}bg-success{% else %}bg-danger{% endif %}"
+                        style="width:{{ mdata.confidence }}%"></div>
+                  </div>
+                  <small class="text-muted">{{ mdata.confidence }}%</small>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted small">Only one model loaded.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RADAR CHART ===== -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100 rounded-4">
+        <div class="card-header bg-primary text-white rounded-top-4">
+         <i class="fas fa-chart-line me-2"></i>Your Score Profile
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center">
+          <canvas id="radarChart" width="300" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SKILL GAP ===== -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-warning text-dark rounded-top-4">
+          <i class="fas fa-chart-bar me-2"></i>Skill Gap Analysis
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-7">
+              <canvas id="gapChart" height="160"></canvas>
+            </div>
+            <div class="col-md-5">
+              {% set sg = result.skill_gap %}
+              <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><i class="fas fa-brain text-primary me-1"></i>Aptitude</span>
+                  <strong>{{ sg.apt_score }}% <span class="text-muted">(Avg: 70.5%)</span></strong>
+                </div>
+                <div class="progress" style="height:10px">
+                  <div class="progress-bar bg-primary" style="width:{{ sg.apt_score }}%"></div>
+                </div>
+                {% if sg.apt_gap > 0 %}<small class="text-danger">Gap: {{ sg.apt_gap }}%</small>{% else %}<small class="text-success">Above average ✓</small>{% endif %}
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><i class="fas fa-code text-success me-1"></i>Technical</span>
+                  <strong>{{ sg.tech_score }}% <span class="text-muted">(Avg: 72.3%)</span></strong>
+                </div>
+                <div class="progress" style="height:10px">
+                  <div class="progress-bar bg-success" style="width:{{ sg.tech_score }}%"></div>
+                </div>
+                {% if sg.tech_gap > 0 %}<small class="text-danger">Gap: {{ sg.tech_gap }}%</small>{% else %}<small class="text-success">Above average ✓</small>{% endif %}
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><i class="fas fa-comments text-info me-1"></i>Communication</span>
+                  <strong>{{ sg.comm_score }}% <span class="text-muted">(Avg: 68.8%)</span></strong>
+                </div>
+                <div class="progress" style="height:10px">
+                  <div class="progress-bar bg-info" style="width:{{ sg.comm_score }}%"></div>
+                </div>
+                {% if sg.comm_gap > 0 %}<small class="text-danger">Gap: {{ sg.comm_gap }}%</small>{% else %}<small class="text-success">Above average ✓</small>{% endif %}
+              </div>
+              <div class="mb-0">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><i class="fas fa-file-alt text-warning me-1"></i>Resume ATS</span>
+                  <strong>{{ sg.resume_score }}/100</strong>
+                </div>
+                <div class="progress" style="height:10px">
+                  <div class="progress-bar bg-warning" style="width:{{ sg.resume_score }}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if sg.weak_areas %}
+          <div class="mt-3">
+            <strong class="small">Weak Areas: </strong>
+            {% for area in sg.weak_areas %}
+            <span class="badge bg-danger me-1">{{ area }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="mt-3">
+            <strong class="small text-muted">Suggestions:</strong>
+            <ul class="list-unstyled mt-1 mb-0">
+              {% for tip in sg.suggestions %}
+              <li class="small mb-1"><i class="fas fa-arrow-right text-primary me-2"></i>{{ tip }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JOB ROLES ===== -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 rounded-4">
+        <div class="card-header bg-success text-white rounded-top-4">
+          <i class="fas fa-briefcase me-2"></i>Recommended Job Roles
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-column gap-2">
+            {% for role in result.job_roles %}
+            <div class="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 rounded-3">
+              <i class="fas fa-user-tie text-success"></i>
+              <span class="fw-semibold small">{{ role }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DOMAIN SKILLS ===== -->
+    <div class="col-md-8">
+      <div class="card border-0 shadow-sm h-100 rounded-4">
+        <div class="card-header bg-info text-white rounded-top-4">
+          <i class="fas fa-layer-group me-2"></i>Domain: {{ academic.domain }} — Skills & Platforms
+        </div>
+        <div class="card-body">
+          {% set dr = result.domain_recommendation %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <h6 class="fw-semibold text-primary small">KEY SKILLS TO MASTER</h6>
+              <div class="d-flex flex-wrap gap-1 mb-3">
+                {% for s in dr.skills %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ s }}</span>
+                {% endfor %}
+              </div>
+              <h6 class="fw-semibold text-success small">PRACTICE PLATFORMS</h6>
+              <div class="d-flex flex-wrap gap-1">
+                {% for p in dr.platforms %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">{{ p }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="fw-semibold text-warning small">CERTIFICATIONS</h6>
+              <ul class="list-unstyled small mb-3">
+                {% for cert in dr.certifications %}
+                <li class="mb-1"><i class="fas fa-certificate text-warning me-2"></i>{{ cert }}</li>
+                {% endfor %}
+              </ul>
+              <h6 class="fw-semibold text-info small">MINI PROJECTS</h6>
+              <ul class="list-unstyled small mb-0">
+                {% for proj in dr.projects %}
+                <li class="mb-1"><i class="fas fa-code text-info me-2"></i>{{ proj }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== COURSES ===== -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-secondary text-white rounded-top-4">
+          <i class="fas fa-graduation-cap me-2"></i>Recommended Courses for {{ academic.domain }}
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            {% for course in result.courses %}
+            <div class="col-md-4">
+              <div class="card border-0 bg-light h-100 rounded-3">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge {% if course.type == 'Free' %}bg-success{% elif course.type == 'Free Audit' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                      {{ course.type }}
+                    </span>
+                  </div>
+                  <h6 class="fw-semibold small mb-1">{{ course.title }}</h6>
+                  <small class="text-muted">{{ course.provider }}</small>
+                  <div class="mt-2">
+                    <a href="{{ course.link }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
+                      <i class="fas fa-external-link-alt me-1"></i>View Course
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CAREER ROADMAP ===== -->
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-dark text-white rounded-top-4">
+          <i class="fas fa-road me-2"></i>Personalised Career Roadmap
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            {% for period, tasks in result.roadmap.items() %}
+            <div class="col-md-4">
+              <div class="roadmap-card p-3 rounded-4 h-100
+                {% if period == '30_day_plan' %}bg-primary bg-opacity-10 border border-primary border-opacity-25
+                {% elif period == '60_day_plan' %}bg-success bg-opacity-10 border border-success border-opacity-25
+                {% else %}bg-warning bg-opacity-10 border border-warning border-opacity-25{% endif %}">
+                <h6 class="fw-bold mb-3
+                  {% if period == '30_day_plan' %}text-primary
+                  {% elif period == '60_day_plan' %}text-success
+                  {% else %}text-warning{% endif %}">
+                  <i class="fas fa-calendar-alt me-2"></i>
+                  {{ period.replace('_day_plan','').replace('_',' ') }}-Day Plan
+                </h6>
+                <ol class="ps-3 mb-0">
+                  {% for task in tasks %}
+                  <li class="small mb-2">{{ task }}</li>
+                  {% endfor %}
+                </ol>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ACTION BUTTONS ===== -->
+    <div class="col-12">
+      <div class="d-flex gap-2 flex-wrap justify-content-center">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary px-4">
+          <i class="fas fa-home me-2"></i>Dashboard
+        </a>
+        <a href="{{ url_for('academic') }}" class="btn btn-outline-primary px-4">
+          <i class="fas fa-edit me-2"></i>Update Details
+        </a>
+        <a href="{{ url_for('predict') }}" class="btn btn-success px-4">
+          <i class="fas fa-redo me-2"></i>Re-run Prediction
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-dark px-4">
+          <i class="fas fa-print me-2"></i>Print Report
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /row -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const sg = {{ result.skill_gap | tojson }};
+
+// Radar Chart
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Aptitude', 'Technical', 'Communication', 'Resume ATS', 'CGPA (×10)'],
+    datasets: [{
+      label: 'Your Scores',
+      data: [
+        sg.apt_score,
+        sg.tech_score,
+        sg.comm_score,
+        sg.resume_score,
+        {{ academic.cgpa * 10 }}
+      ],
+      backgroundColor: 'rgba(13,110,253,0.2)',
+      borderColor: '#0d6efd',
+      pointBackgroundColor: '#0d6efd',
+      borderWidth: 2
+    }, {
+      label: 'Benchmark',
+      data: [70.5, 72.3, 68.8, 70, 70],
+      backgroundColor: 'rgba(220,53,69,0.1)',
+      borderColor: '#dc3545',
+      pointBackgroundColor: '#dc3545',
+      borderWidth: 1,
+      borderDash: [5, 5]
+    }]
+  },
+  options: {
+    scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } },
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Gap Bar Chart
+new Chart(document.getElementById('gapChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Aptitude', 'Technical', 'Communication'],
+    datasets: [{
+      label: 'Your Score',
+      data: [sg.apt_score, sg.tech_score, sg.comm_score],
+      backgroundColor: ['#0d6efd', '#198754', '#0dcaf0']
+    }, {
+      label: 'Benchmark',
+      data: [70.5, 72.3, 68.8],
+      backgroundColor: ['rgba(13,110,253,0.25)', 'rgba(25,135,84,0.25)', 'rgba(13,202,240,0.25)'],
+      borderColor: ['#0d6efd', '#198754', '#0dcaf0'],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    scales: { y: { min: 0, max: 100 } },
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+</script>
+{% endblock %}
